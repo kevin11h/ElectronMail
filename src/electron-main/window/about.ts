@@ -6,6 +6,7 @@ import {Context} from "src/electron-main/model";
 import {DEFAULT_WEB_PREFERENCES} from "./constants";
 import {
     PACKAGE_DESCRIPTION,
+    PACKAGE_GITHUB_PROJECT_URL,
     PACKAGE_LICENSE,
     PACKAGE_VERSION,
     PRODUCT_NAME,
@@ -21,15 +22,27 @@ const logger = curryFunctionMembers(_logger, "[src/electron-main/window/about]")
 const resolveContent: (ctx: Context) => Promise<Unpacked<ReturnType<typeof injectVendorsAppCssIntoHtmlFile>>> = (
     (): typeof resolveContent => {
         let result: typeof resolveContent = async (ctx: Context) => {
+            const jsonData = await import("./about.json");
             const htmlInjection: string = [
                 sanitizeHtml(
                     `
-                    <h1>${PRODUCT_NAME} v${PACKAGE_VERSION}</h1>
+                    <h1>
+                        ${PRODUCT_NAME} v${PACKAGE_VERSION}
+                        <sup style="top: -1em; font-size: 50%;">
+                            <a href="${PACKAGE_GITHUB_PROJECT_URL}/commit/${jsonData.commit}">
+                                ${jsonData.branch}:${jsonData.commitShort}
+                            </a>
+                        </sup>
+                    </h1>
                     <p>${PACKAGE_DESCRIPTION}</p>
                     <p>Distributed under ${PACKAGE_LICENSE} license.</p>
                     `,
                     {
-                        allowedTags: sanitizeHtml.defaults.allowedTags.concat(["h1"]),
+                        allowedTags: sanitizeHtml.defaults.allowedTags.concat(["h1", "sup"]),
+                        allowedAttributes: {
+                            a: ["href"],
+                            sup: ["style"],
+                        },
                     },
                 ),
                 ((): string => {
